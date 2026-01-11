@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bay Bubble - Founder/Company Database</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: white;
+            overflow: hidden;
+        }
+        #container { width: 100vw; height: 100vh; cursor: grab; }
+        #container:active { cursor: grabbing; }
+        .header {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: #1a1a1a;
+            padding: 20px 24px;
+            z-index: 10;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+            max-width: 450px;
+        }
+        .header h1 {
+            font-size: 24px;
+            color: white;
+            margin-bottom: 4px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header-subtitle {
+            color: #666;
+            font-size: 12px;
+            text-transform: none;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            font-weight: 400;
+        }
+        .search-input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .search-input::placeholder {
+            color: #666;
+        }
+        .search-input:focus {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .filters-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 0;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .filter-label {
+            color: #666;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .filter-select {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            outline: none;
+            min-width: 130px;
+            transition: all 0.2s;
+        }
+        .filter-select:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.15);
+        }
+        .filter-select option {
+            background: #1a1a2e;
+            color: white;
+        }
+        .footer {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: #1a1a1a;
+            padding: 20px 24px;
+            z-index: 10;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+        }
+        .legend-title {
+            color: #666;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.95);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 12px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+        .tooltip.show { display: block; }
+        .tooltip-title { font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+        .tooltip-meta { color: #aaa; font-size: 11px; margin-bottom: 8px; }
+        .tooltip-desc { line-height: 1.4; margin-bottom: 8px; }
+        .tooltip-hint { color: #888; font-size: 10px; font-style: italic; }
+        .modal {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 2000;
+            backdrop-filter: blur(3px);
+        }
+        .modal.show { display: block; }
+        .modal-content {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1a1a1a;
+            padding: 0;
+            border-radius: 16px;
+            width: 420px;
+            max-height: 85vh;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+        }
+        .modal-header {
+            padding: 28px 28px 20px 28px;
+            background: #1a1a1a;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+        }
+        .acquisition-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .acquired-badge {
+            background: rgba(0,255,0,0.1);
+            border: 1px solid rgba(0,255,0,0.25);
+            color: #00FF00;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .arrow {
+            color: #00FF00;
+            font-size: 18px;
+            font-weight: 300;
+        }
+        .acquired-by {
+            color: #00FF00;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .modal-desc {
+            color: #aaa;
+            line-height: 1.7;
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+        .close-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 28px;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .close-btn:hover { color: #fff; }
+        .modal-body {
+            padding: 24px 28px 28px 28px;
+            overflow-y: auto;
+            max-height: calc(85vh - 200px);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .info-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .info-icon {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        .info-value {
+            color: white;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+        .info-value.green {
+            color: #00FF88;
+        }
+        .section-title {
+            color: #666;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+        .founders-list {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .founder-pill {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 18px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .founder-pill:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        .x-icon {
+            color: #000000;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .investors-list {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .investor-pill {
+            background: rgba(0,255,255,0.08);
+            border: 1px solid rgba(0,255,255,0.25);
+            color: #00E5E5;
+            padding: 10px 20px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .investor-pill:hover {
+            background: rgba(0,255,255,0.15);
+            transform: translateY(-2px);
+            border-color: rgba(0,255,255,0.4);
+        }
+        .investor-pill.selected {
+            background: rgba(0,255,255,0.2);
+            border-color: rgba(0,255,255,0.5);
+        }
+        .visit-btn {
+            width: 100%;
+            background: #00E5E5;
+            color: #000;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .visit-btn:hover {
+            background: #00CCCC;
+            transform: translateY(-2px);
+        }
+        .visit-icon {
+            font-size: 18px;
+        }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            z-index: 100;
+            text-align: center;
+        }
+        .filter-indicator {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,230,230,0.12);
+            border: 1px solid rgba(0,230,230,0.3);
+            color: #00E5E5;
+            padding: 14px 24px;
+            border-radius: 24px;
+            font-size: 13px;
+            z-index: 15;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+        .filter-indicator.show {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .clear-filter {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .clear-filter:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .company-count {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: #1a1a1a;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 14px;
+            color: #00E5E5;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div class="loading">Loading Database...</div>
+    <div class="company-count" id="companyCount" style="display: none;">
+        <strong id="visibleCount">0</strong> / <span id="totalCount">0</span> companies
+    </div>
+    
+    <div class="header">
+        <h1>Bay Bubble</h1>
+        <div class="header-subtitle">Visualize the Founder Ecosystem</div>
+        
+        <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="🔍 Search founders, companies..."
+        />
+        
+        <div class="filters-row">
+            <div class="filter-group">
+                <span class="filter-label">Category</span>
+                <select class="filter-select" id="categoryFilter">
+                    <option value="All">All Categories</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Year Founded</span>
+                <select class="filter-select" id="yearFilter">
+                    <option value="All">All Years</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Acquisition</span>
+                <select class="filter-select" id="acqYearFilter">
+                    <option value="All">All Status</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="legend-title">Startup Status</div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #00FF00;"></div>
+            <span>Acquired / Public</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #FF8C00;"></div>
+            <span>New / Emerging</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #FFD700;"></div>
+            <span>Funded (Private)</span>
+        </div>
+    </div>
+
+    <div class="filter-indicator" id="filterIndicator">
+        Filtering by: <strong id="filterText"></strong>
+        <button class="clear-filter" onclick="clearInvestorFilter()">Clear</button>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        // Updated Dataset based on your inputs
+        const DATA = [
+            {"id":"replit","name":"Replit","desc":"The collaborative browser-based IDE","cat":"Developer Tools","yearEst":2016,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series B","totalFunding":100,"stage":"Series B","confidence":"High","investors":["Coatue","Andreessen Horowitz"],"founders":[{"name":"Amjad Masad","founderX":"https://x.com/amasad"}],"website":"https://replit.com","x":-5,"y":8,"z":2},
+            {"id":"descript","name":"Descript","desc":"All-in-one video and audio editing","cat":"AI","yearEst":2017,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series C","totalFunding":100,"stage":"Series C","confidence":"High","investors":["OpenAI Startup Fund","Andreessen Horowitz"],"founders":[{"name":"Andrew Mason","founderX":"https://x.com/andrewmason"}],"website":"https://www.descript.com","x":5,"y":8,"z":-2},
+            {"id":"perplexity","name":"Perplexity","desc":"AI-powered answer engine","cat":"AI","yearEst":2022,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series B","totalFunding":100,"stage":"Series B","confidence":"High","investors":["NVIDIA","Jeff Bezos"],"founders":[{"name":"Aravind Srinivas","founderX":"https://x.com/AravSrinivas"}],"website":"https://www.perplexity.ai","x":-8,"y":6,"z":4},
+            {"id":"glean","name":"Glean","desc":"Work assistant and enterprise search","cat":"Enterprise","yearEst":2019,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series D","totalFunding":360,"stage":"Series D","confidence":"High","investors":["Kleiner Perkins","Sequoia"],"founders":[{"name":"Arvind Jain","founderX":"https://x.com/jainarvind"}],"website":"https://www.glean.com","x":8,"y":6,"z":-4},
+            {"id":"wiz","name":"Wiz","desc":"Cloud security platform","cat":"Cybersecurity","yearEst":2020,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series E","totalFunding":900,"stage":"Series E","confidence":"High","investors":["Sequoia","Index Ventures"],"founders":[{"name":"Assaf Rappaport","founderX":"https://x.com/assaf_rapp"}],"website":"https://www.wiz.io","x":0,"y":9,"z":0},
+            {"id":"activision","name":"Activision Blizzard","desc":"Interactive entertainment and gaming","cat":"Gaming","yearEst":2008,"yearAcq":2023,"acquired":true,"acquiredBy":"Microsoft","fundingStatus":"Public","totalFunding":0,"stage":"Public","confidence":"High","investors":["Public Markets"],"founders":[{"name":"Bobby Kotick","founderX":"https://x.com/BKotick"}],"website":"https://www.activisionblizzard.com","x":-15,"y":-5,"z":5},
+            {"id":"mercor","name":"Mercor","desc":"AI vetting and recruiting platform","cat":"HR Tech","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":30,"stage":"Series A","confidence":"High","investors":["Benchmark","General Catalyst"],"founders":[{"name":"Brendan Foody","founderX":"https://x.com/BrendanFoody"}],"website":"https://www.mercor.com","x":12,"y":-3,"z":2},
+            {"id":"limitless","name":"Limitless","desc":"AI-powered personalized memory assistant","cat":"AI","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":20,"stage":"Series A","confidence":"High","investors":["Andreessen Horowitz"],"founders":[{"name":"Dan Siroker","founderX":"https://x.com/dsiroker"}],"website":"https://www.limitless.ai","x":-12,"y":-3,"z":-2},
+            {"id":"captions","name":"Captions","desc":"AI video creation and editing suite","cat":"AI","yearEst":2021,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series B","totalFunding":40,"stage":"Series B","confidence":"High","investors":["Kleiner Perkins","Sequoia"],"founders":[{"name":"Gaurav Misra","founderX":"https://x.com/gauravmisra"}],"website":"https://www.captions.ai","x":10,"y":5,"z":5},
+            {"id":"whatsapp","name":"WhatsApp","desc":"Secure messaging and calling","cat":"Social","yearEst":2009,"yearAcq":2014,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":60,"stage":"Acquired","confidence":"High","investors":["Sequoia"],"founders":[{"name":"Jan Koum","founderX":"https://x.com/jankoum"}],"website":"https://www.whatsapp.com","x":-18,"y":8,"z":-3},
+            {"id":"instagram","name":"Instagram","desc":"Photo and video sharing networking","cat":"Social","yearEst":2010,"yearAcq":2012,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":57,"stage":"Acquired","confidence":"High","investors":["Benchmark"],"founders":[{"name":"Kevin Systrom","founderX":"https://x.com/kevin"}],"website":"https://about.instagram.com","x":18,"y":8,"z":3},
+            {"id":"cursor","name":"Cursor","desc":"The AI-first code editor","cat":"Developer Tools","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":26,"stage":"Series A","confidence":"High","investors":["OpenAI Startup Fund"],"founders":[{"name":"Michael Truell","founderX":"https://x.com/mntruell"}],"website":"https://www.cursor.sh","x":-6,"y":4,"z":-5},
+            {"id":"inflection","name":"Inflection AI","desc":"Personal AI studio (Pi)","cat":"AI","yearEst":2022,"yearAcq":2024,"acquired":true,"acquiredBy":"Microsoft","fundingStatus":"Acquired","totalFunding":1500,"stage":"Acquired","confidence":"High","investors":["Greylock","Microsoft"],"founders":[{"name":"Mustafa Suleyman","founderX":"https://x.com/mustafasuleymn"}],"website":"https://inflection.ai","x":6,"y":4,"z":5},
+            {"id":"character","name":"Character.AI","desc":"Open-ended conversational applications","cat":"AI","yearEst":2021,"yearAcq":2024,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":150,"stage":"Acquired","confidence":"High","investors":["a16z"],"founders":[{"name":"Noam Shazeer","founderX":"https://x.com/noamshazeer"}],"website":"https://character.ai","x":0,"y":-8,"z":6},
+            {"id":"oculus","name":"Oculus VR","desc":"Virtual reality technology","cat":"Hardware","yearEst":2012,"yearAcq":2014,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":91,"stage":"Acquired","confidence":"High","investors":["Andreessen Horowitz"],"founders":[{"name":"Palmer Luckey","founderX":"https://x.com/PalmerLuckey"}],"website":"https://www.oculus.com","x":-20,"y":-4,"z":-4},
+            {"id":"cognition","name":"Cognition AI","desc":"Autonomous AI software engineer (Devin)","cat":"AI","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":21,"stage":"Series A","confidence":"High","investors":["Founders Fund"],"founders":[{"name":"Walden Yan","founderX":"https://x.com/waldenyan"}],"website":"https://www.cognition.ai","x":20,"y":-4,"z":4},
+            {"id":"warp","name":"Warp","desc":"Intelligent terminal","cat":"Developer Tools","yearEst":2020,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series B","totalFunding":73,"stage":"Series B","confidence":"High","investors":["GV","Neo"],"founders":[{"name":"Zach Lloyd","founderX":"https://x.com/zachlloydtweets"}],"website":"https://www.warp.dev","x":-4,"y":-6,"z":3},
+            {"id":"magicschool","name":"Magic School","desc":"AI tools for educators","cat":"EdTech","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":20,"stage":"Series A","confidence":"High","investors":["Range Ventures"],"founders":[{"name":"Adeel Khan","founderX":"https://x.com/adeelkhan"}],"website":"https://www.magicschool.ai","x":4,"y":-6,"z":-3},
+            {"id":"docmonster","name":"DocMonster","desc":"AI documentation assistant","cat":"Developer Tools","yearEst":2024,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":2,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Alex Zhang","founderX":null}],"website":"https://docmonster.ai","x":14,"y":2,"z":-6},
+            {"id":"clipchamp","name":"Clipchamp","desc":"Video creation platform","cat":"Design","yearEst":2013,"yearAcq":2021,"acquired":true,"acquiredBy":"Microsoft","fundingStatus":"Acquired","totalFunding":15,"stage":"Acquired","confidence":"High","investors":["Tola Capital"],"founders":[{"name":"Alexander Dreiling","founderX":"https://x.com/adreiling"}],"website":"https://clipchamp.com","x":-14,"y":2,"z":6},
+            {"id":"bebop","name":"Bebop","desc":"Enterprise application platform","cat":"Enterprise","yearEst":2015,"yearAcq":2015,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":0,"stage":"Acquired","confidence":"High","investors":["Google"],"founders":[{"name":"Amir Ashkenazi","founderX":"https://x.com/amirashk"}],"website":"https://bebop.ai","x":0,"y":5,"z":-8},
+            {"id":"siemplify","name":"Siemplify","desc":"Security orchestration and response","cat":"Cybersecurity","yearEst":2015,"yearAcq":2022,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":58,"stage":"Acquired","confidence":"High","investors":["G20 Ventures"],"founders":[{"name":"Amos Stern","founderX":"https://x.com/amosstern"}],"website":"https://www.siemplify.co","x":-9,"y":-9,"z":-2},
+            {"id":"cameyo","name":"Cameyo","desc":"Virtual application delivery","cat":"Cloud","yearEst":2018,"yearAcq":2024,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":20,"stage":"Acquired","confidence":"High","investors":["Belvedere"],"founders":[{"name":"Andrew Miller","founderX":"https://x.com/andrewmiller"}],"website":"https://cameyo.com","x":9,"y":-9,"z":2},
+            {"id":"reworkd","name":"Reworkd","desc":"Open source AI agents","cat":"AI","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":5,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Asim Shrestha","founderX":"https://x.com/asimshrestha"}],"website":"https://reworkd.ai","x":-2,"y":7,"z":5},
+            {"id":"kustomer","name":"Kustomer","desc":"CRM for modern customer experience","cat":"Enterprise","yearEst":2015,"yearAcq":2020,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":174,"stage":"Acquired","confidence":"High","investors":["Tiger Global"],"founders":[{"name":"Brad Birnbaum","founderX":"https://x.com/bbirnbaum"}],"website":"https://www.kustomer.com","x":2,"y":7,"z":-5},
+            {"id":"manus","name":"Manus","desc":"AI automation platform","cat":"AI","yearEst":2024,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":3,"stage":"Seed","confidence":"High","investors":["Unknown"],"founders":[{"name":"Yichao Ji","founderX":"https://x.com/ji_yichao"}],"website":"https://manus.ai","x":-16,"y":6,"z":2},
+            {"id":"bigbox","name":"BigBox VR","desc":"VR game developer","cat":"Gaming","yearEst":2016,"yearAcq":2021,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":6,"stage":"Acquired","confidence":"High","investors":["Shasta Ventures"],"founders":[{"name":"Chia Chin Lee","founderX":"https://x.com/chiachinlee"}],"website":"https://www.bigboxvr.com","x":16,"y":6,"z":-2},
+            {"id":"revuu","name":"Revuu","desc":"Product review analysis","cat":"E-commerce","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":1,"stage":"Seed","confidence":"High","investors":["Unknown"],"founders":[{"name":"Brandon Tadesse","founderX":"https://x.com/REVUU_app"}],"website":"https://revuu.ai","x":-11,"y":3,"z":-6},
+            {"id":"within","name":"Within","desc":"VR fitness and immersive content","cat":"Hardware","yearEst":2014,"yearAcq":2023,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":50,"stage":"Acquired","confidence":"High","investors":["Andreessen Horowitz"],"founders":[{"name":"Chris Milk","founderX":"https://x.com/chrismilk"}],"website":"https://www.with.in","x":11,"y":3,"z":6},
+            {"id":"socratic","name":"Socratic","desc":"AI homework helper","cat":"EdTech","yearEst":2013,"yearAcq":2018,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":7,"stage":"Acquired","confidence":"High","investors":["Spark Capital"],"founders":[{"name":"Chris Pedregal","founderX":"https://x.com/cpedregal"}],"website":"https://socratic.org","x":-7,"y":-7,"z":7},
+            {"id":"photomath","name":"Photomath","desc":"Camera calculator app","cat":"EdTech","yearEst":2014,"yearAcq":2023,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":29,"stage":"Acquired","confidence":"High","investors":["Menlo Ventures"],"founders":[{"name":"Damir Sabol","founderX":"https://x.com/damirsabol"}],"website":"https://photomath.com","x":7,"y":-7,"z":-7},
+            {"id":"lofelt","name":"Lofelt","desc":"HD haptic technology","cat":"Hardware","yearEst":2014,"yearAcq":2022,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":10,"stage":"Acquired","confidence":"High","investors":["Wolfman.One"],"founders":[{"name":"Daniel Büttner","founderX":"https://x.com/danielbuettner"}],"website":"https://lofelt.com","x":-3,"y":8,"z":-6},
+            {"id":"runloop","name":"RunLoop","desc":"Developer platform","cat":"Developer Tools","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":2,"stage":"Seed","confidence":"High","investors":["Unknown"],"founders":[{"name":"Jonathan Wall","founderX":null}],"website":"https://runloop.ai","x":3,"y":8,"z":6},
+            {"id":"beacons","name":"Beacons","desc":"Link in bio and creator tools","cat":"Social","yearEst":2019,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":13,"stage":"Series A","confidence":"High","investors":["a16z"],"founders":[{"name":"David Zeng","founderX":"https://x.com/davidzeng"}],"website":"https://beacons.ai","x":-13,"y":5,"z":3},
+            {"id":"frigade","name":"Frigade","desc":"Developer platform for onboarding","cat":"Developer Tools","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":3,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Edward Kim","founderX":"https://x.com/edwardtkim"}],"website":"https://frigade.com","x":13,"y":5,"z":-3},
+            {"id":"stackblitz","name":"StackBlitz","desc":"Instant online IDE","cat":"Developer Tools","yearEst":2017,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":7,"stage":"Seed","confidence":"High","investors":["Greylock"],"founders":[{"name":"Eric Simons","founderX":"https://x.com/ericsimons40"}],"website":"https://stackblitz.com","x":-17,"y":-2,"z":4},
+            {"id":"gamma","name":"Gamma","desc":"AI-powered presentation creation","cat":"AI","yearEst":2020,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":7,"stage":"Series A","confidence":"High","investors":["Accel"],"founders":[{"name":"Grant Lee","founderX":"https://x.com/grantlee"}],"website":"https://gamma.app","x":17,"y":-2,"z":-4},
+            {"id":"humane","name":"Humane","desc":"AI hardware platform","cat":"Hardware","yearEst":2018,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series C","totalFunding":230,"stage":"Series C","confidence":"High","investors":["Sam Altman"],"founders":[{"name":"Imran Chaudhri","founderX":"https://x.com/imranchaudhri"}],"website":"https://humane.com","x":-5,"y":0,"z":8},
+            {"id":"supermaven","name":"Supermaven","desc":"Fast AI code completion","cat":"Developer Tools","yearEst":2024,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":2,"stage":"Seed","confidence":"High","investors":["Unknown"],"founders":[{"name":"Jacob Jackson","founderX":"https://x.com/jacobjackson"}],"website":"https://supermaven.com","x":5,"y":0,"z":-8},
+            {"id":"fitbit","name":"Fitbit","desc":"Connected health and fitness","cat":"Hardware","yearEst":2007,"yearAcq":2021,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":66,"stage":"Acquired","confidence":"High","investors":["Foundry Group"],"founders":[{"name":"James Park","founderX":"https://x.com/jamespark"}],"website":"https://www.fitbit.com","x":-10,"y":-4,"z":-3},
+            {"id":"alter","name":"Alter","desc":"Avatar technology for developers","cat":"Social","yearEst":2017,"yearAcq":2022,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":3,"stage":"Acquired","confidence":"High","investors":["Play Ventures"],"founders":[{"name":"Srikar Dandamuraju","founderX":null}],"website":"https://alter.ai","x":10,"y":-4,"z":3},
+            {"id":"helicone","name":"Helicone","desc":"LLM observability platform","cat":"AI","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":1,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Justin Torre","founderX":"https://x.com/justintorre"}],"website":"https://www.helicone.ai","x":-15,"y":7,"z":1},
+            {"id":"mandiant","name":"Mandiant","desc":"Cyber defense and response","cat":"Cybersecurity","yearEst":2004,"yearAcq":2022,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":0,"stage":"Acquired","confidence":"High","investors":["Public Markets"],"founders":[{"name":"Kevin Mandia","founderX":"https://x.com/kevinmandia"}],"website":"https://www.mandiant.com","x":15,"y":7,"z":-1},
+            {"id":"fireflies","name":"Fireflies.ai","desc":"AI meeting assistant","cat":"AI","yearEst":2016,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":19,"stage":"Series A","confidence":"High","investors":["Khosla Ventures"],"founders":[{"name":"Krish Ramineni","founderX":"https://x.com/krishramineni"}],"website":"https://fireflies.ai","x":-2,"y":-8,"z":4},
+            {"id":"looker","name":"Looker","desc":"Business intelligence platform","cat":"Enterprise","yearEst":2012,"yearAcq":2019,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":280,"stage":"Acquired","confidence":"High","investors":["CapitalG"],"founders":[{"name":"Lloyd Tabb","founderX":"https://x.com/lloydtabb"}],"website":"https://looker.com","x":2,"y":-8,"z":-4},
+            {"id":"basedash","name":"Basedash","desc":"Internal tools generation","cat":"Developer Tools","yearEst":2019,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":4,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Max Musing","founderX":"https://x.com/maxmusing"}],"website":"https://basedash.com","x":-19,"y":4,"z":2},
+            {"id":"supaglue","name":"Supaglue","desc":"Open source unified API","cat":"Developer Tools","yearEst":2021,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":1,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Mike Wu","founderX":"https://x.com/mikewu"}],"website":"https://supaglue.com","x":19,"y":4,"z":-2},
+            {"id":"riverside","name":"Riverside","desc":"Online podcast recording","cat":"Design","yearEst":2019,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series B","totalFunding":35,"stage":"Series B","confidence":"High","investors":["Oren Zeev"],"founders":[{"name":"Nadav Keyson","founderX":"https://x.com/nadavkeyson"}],"website":"https://riverside.fm","x":-6,"y":-2,"z":8},
+            {"id":"quilt","name":"Quilt","desc":"Screen recording for teams","cat":"Enterprise","yearEst":2022,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":3,"stage":"Seed","confidence":"High","investors":["Unknown"],"founders":[{"name":"Nat Friedman","founderX":"https://x.com/natfriedman"}],"website":"https://quilt.app","x":6,"y":-2,"z":-8},
+            {"id":"continue","name":"Continue","desc":"Open source AI autopilot","cat":"Developer Tools","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":2,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Nate Sesti","founderX":"https://x.com/natesesti"}],"website":"https://continue.dev","x":-22,"y":2,"z":-2},
+            {"id":"galileo","name":"Galileo AI","desc":"Interface generation platform","cat":"AI","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":4,"stage":"Seed","confidence":"High","investors":["Kholsa Ventures"],"founders":[{"name":"Owen Campbell-Moore","founderX":"https://x.com/owencm"}],"website":"https://galileo.ai","x":22,"y":2,"z":2},
+            {"id":"latticeflow","name":"Lattice Flow","desc":"AI safety and reliability","cat":"AI","yearEst":2020,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":12,"stage":"Series A","confidence":"High","investors":["OpenOcean"],"founders":[{"name":"Petar Tsankov","founderX":"https://x.com/ptsankov"}],"website":"https://latticeflow.ai","x":-11,"y":-5,"z":4},
+            {"id":"tldv","name":"tl;dv","desc":"Meeting recorder for Zoom/Google","cat":"Enterprise","yearEst":2020,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":4,"stage":"Series A","confidence":"High","investors":["Seedcamp"],"founders":[{"name":"Raphael Allstadt","founderX":"https://x.com/raphaelallstadt"}],"website":"https://tldv.io","x":11,"y":-5,"z":-4},
+            {"id":"zenimax","name":"ZeniMax","desc":"Video game holding company","cat":"Gaming","yearEst":1999,"yearAcq":2021,"acquired":true,"acquiredBy":"Microsoft","fundingStatus":"Acquired","totalFunding":600,"stage":"Acquired","confidence":"High","investors":["Providence"],"founders":[{"name":"Robert Altman","founderX":null}],"website":"https://www.zenimax.com","x":-16,"y":-6,"z":-3},
+            {"id":"nango","name":"Nango","desc":"Unified API for B2B","cat":"Developer Tools","yearEst":2022,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":1,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Robin Guldener","founderX":"https://x.com/robinguldener"}],"website":"https://nango.dev","x":16,"y":-6,"z":3},
+            {"id":"sublayer","name":"Sublayer","desc":"AI coding agent","cat":"Developer Tools","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":1,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Scott Werner","founderX":"https://x.com/scottwerner"}],"website":"https://sublayer.com","x":-4,"y":8,"z":-5},
+            {"id":"north","name":"North (Focals)","desc":"Smart glasses manufacturer","cat":"Hardware","yearEst":2012,"yearAcq":2020,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":140,"stage":"Acquired","confidence":"High","investors":["Amazon Alexa Fund"],"founders":[{"name":"Stephen Lake","founderX":"https://x.com/stephenlake"}],"website":"https://bynorth.com","x":4,"y":8,"z":5},
+            {"id":"mightyapp","name":"MightyApp","desc":"Faster browser via cloud","cat":"Cloud","yearEst":2019,"yearAcq":2022,"acquired":true,"acquiredBy":"Google","fundingStatus":"Acquired","totalFunding":20,"stage":"Acquired","confidence":"High","investors":["Unknown"],"founders":[{"name":"Suhail Doshi","founderX":"https://x.com/suhail"}],"website":"https://mighty.app","x":-8,"y":-2,"z":5},
+            {"id":"ctrllabs","name":"CTRL-labs","desc":"Neural interface technology","cat":"Hardware","yearEst":2015,"yearAcq":2019,"acquired":true,"acquiredBy":"Meta","fundingStatus":"Acquired","totalFunding":67,"stage":"Acquired","confidence":"High","investors":["GV"],"founders":[{"name":"Thomas Reardon","founderX":"https://x.com/thomasreardon"}],"website":"https://about.meta.com","x":8,"y":-2,"z":-5},
+            {"id":"meco","name":"Meco","desc":"Newsletter reader app","cat":"Social","yearEst":2020,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":1,"stage":"Seed","confidence":"High","investors":["Y Combinator"],"founders":[{"name":"Tim Khoury","founderX":"https://x.com/timkhoury"}],"website":"https://www.meco.app","x":-13,"y":0,"z":-6},
+            {"id":"together","name":"Together AI","desc":"Open source AI cloud","cat":"AI","yearEst":2023,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Series A","totalFunding":102,"stage":"Series A","confidence":"High","investors":["Kleiner Perkins"],"founders":[{"name":"Vipul Prakash","founderX":"https://x.com/vipulprakash"}],"website":"https://www.together.ai","x":13,"y":0,"z":6},
+            {"id":"neverinstall","name":"Neverinstall","desc":"Cloud browser platform","cat":"Cloud","yearEst":2020,"yearAcq":null,"acquired":false,"acquiredBy":null,"fundingStatus":"Seed","totalFunding":1,"stage":"Seed","confidence":"High","investors":["Speciale Invest"],"founders":[{"name":"Vishnu Sivan","founderX":"https://x.com/vishnusivan"}],"website":"https://neverinstall.com","x":-1,"y":-5,"z":-2}
+        ];
+
+        let selectedInvestor = null;
+        let selectedYear = 'All';
+        let selectedCategoryFilter = 'All';
+        let selectedAcqYear = 'All';
+        let searchQuery = '';
+        let nodes = [];
+
+        function updateCompanyCount() {
+            const visible = nodes.filter(n => n.visible).length;
+            document.getElementById('visibleCount').textContent = visible;
+            document.getElementById('totalCount').textContent = DATA.length;
+        }
+
+        function initVisualization() {
+            const years = [...new Set(DATA.map(d => d.yearEst))].sort((a, b) => b - a);
+            const categories = [...new Set(DATA.map(d => d.cat))].sort();
+            const acqYears = [...new Set(DATA.filter(d => d.yearAcq).map(d => d.yearAcq))].sort((a, b) => b - a);
+            
+            const yearFilter = document.getElementById('yearFilter');
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearFilter.appendChild(option);
+            });
+
+            const categoryFilter = document.getElementById('categoryFilter');
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                categoryFilter.appendChild(option);
+            });
+
+            const acqYearFilter = document.getElementById('acqYearFilter');
+            acqYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = `Acquired ${year}`;
+                acqYearFilter.appendChild(option);
+            });
+
+            initThreeJS();
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a0a);
+        scene.fog = new THREE.Fog(0x0a0a0a, 10, 80);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        function initThreeJS() {
+            document.getElementById('container').appendChild(renderer.domElement);
+            document.querySelector('.loading').style.display = 'none';
+            document.getElementById('companyCount').style.display = 'block';
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const light1 = new THREE.PointLight(0xffffff, 1);
+            light1.position.set(10, 10, 10);
+            scene.add(light1);
+            const light2 = new THREE.PointLight(0xffffff, 0.5);
+            light2.position.set(-10, -10, -10);
+            scene.add(light2);
+
+            createNodes();
+            setupInteractions();
+            updateCompanyCount();
+            animate();
+        }
+
+        function getColor(node) {
+            if (node.acquired) return 0x00FF00;
+            const currentYear = new Date().getFullYear();
+            if (currentYear - node.yearEst < 2) return 0xFF8C00; 
+            if (node.fundingStatus !== 'Bootstrapped') return 0xFFD700;
+            return 0x4A9EFF;
+        }
+
+        function createNodes() {
+            DATA.forEach(d => {
+                const geo = new THREE.SphereGeometry(0.4, 32, 32);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: getColor(d),
+                    emissive: getColor(d),
+                    emissiveIntensity: 0.2,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(d.x, d.y, d.z);
+                mesh.userData = d;
+                scene.add(mesh);
+                nodes.push(mesh);
+            });
+        }
+
+        function setupInteractions() {
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            const tooltip = document.getElementById('tooltip');
+            let hoveredNode = null;
+
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(nodes.filter(n => n.visible));
+
+                if (intersects.length > 0) {
+                    const node = intersects[0].object;
+                    if (hoveredNode !== node) {
+                        if (hoveredNode) {
+                            hoveredNode.scale.set(1, 1, 1);
+                            hoveredNode.material.emissiveIntensity = 0.2;
+                        }
+                        hoveredNode = node;
+                        node.scale.set(1.5, 1.5, 1.5);
+                        node.material.emissiveIntensity = 0.5;
+
+                        const d = node.userData;
+                        tooltip.innerHTML = `
+                            <div class="tooltip-title">${d.name}</div>
+                            <div class="tooltip-meta">${d.cat} • Founded ${d.yearEst}</div>
+                            <div class="tooltip-desc">${d.desc}</div>
+                            <div class="tooltip-hint">Click to view details</div>
+                        `;
+                        tooltip.style.left = e.clientX + 15 + 'px';
+                        tooltip.style.top = e.clientY + 15 + 'px';
+                        tooltip.classList.add('show');
+                    }
+                } else {
+                    if (hoveredNode) {
+                        hoveredNode.scale.set(1, 1, 1);
+                        hoveredNode.material.emissiveIntensity = 0.2;
+                        hoveredNode = null;
+                    }
+                    tooltip.classList.remove('show');
+                }
+            });
+
+            renderer.domElement.addEventListener('click', () => {
+                if (hoveredNode) {
+                    showModal(hoveredNode.userData);
+                }
+            });
+
+            let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+
+                    camera.position.x -= deltaX * 0.02;
+                    camera.position.y += deltaY * 0.02;
+                    camera.lookAt(scene.position);
+
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            renderer.domElement.addEventListener('mouseup', () => { isDragging = false; });
+
+            renderer.domElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                camera.position.z += e.deltaY * 0.1;
+                camera.position.z = Math.max(5, Math.min(100, camera.position.z));
+            }, { passive: false });
+
+            document.getElementById('categoryFilter').addEventListener('change', (e) => {
+                selectedCategoryFilter = e.target.value;
+                applyFilters();
+            });
+
+            document.getElementById('yearFilter').addEventListener('change', (e) => {
+                selectedYear = e.target.value;
+                applyFilters();
+            });
+
+            document.getElementById('acqYearFilter').addEventListener('change', (e) => {
+                selectedAcqYear = e.target.value;
+                applyFilters();
+            });
+
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                applyFilters();
+            });
+        }
+
+        function applyFilters() {
+            nodes.forEach(n => {
+                const d = n.userData;
+                let visible = true;
+
+                if (selectedCategoryFilter !== 'All' && d.cat !== selectedCategoryFilter) visible = false;
+                if (selectedYear !== 'All' && d.yearEst !== parseInt(selectedYear)) visible = false;
+                if (selectedAcqYear !== 'All' && (!d.acquired || d.yearAcq !== parseInt(selectedAcqYear))) visible = false;
+                if (selectedInvestor && !d.investors.includes(selectedInvestor)) visible = false;
+                
+                if (searchQuery) {
+                    const nameMatch = d.name.toLowerCase().includes(searchQuery);
+                    const descMatch = d.desc.toLowerCase().includes(searchQuery);
+                    const categoryMatch = d.cat.toLowerCase().includes(searchQuery);
+                    const founderMatch = d.founders.some(f => f.name.toLowerCase().includes(searchQuery));
+                    
+                    if (!nameMatch && !descMatch && !categoryMatch && !founderMatch) {
+                        visible = false;
+                    }
+                }
+
+                n.visible = visible;
+            });
+            updateCompanyCount();
+        }
+
+        function showModal(data) {
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modal-content');
+            
+            let acquisitionHTML = '';
+            if (data.acquired) {
+                acquisitionHTML = `
+                    <div class="acquisition-status">
+                        <div class="acquired-badge">ACQUIRED</div>
+                        <div class="arrow">→</div>
+                        <div class="acquired-by">Acquired by ${data.acquiredBy} ${data.yearAcq ? '('+data.yearAcq+')' : ''}</div>
+                    </div>
+                `;
+            }
+
+            const foundersHTML = data.founders.map(f => {
+                if (!f.founderX) {
+                    return `
+                        <div class="founder-pill">
+                            ${f.name}
+                        </div>
+                    `;
+                }
+                return `
+                    <a href="${f.founderX}" target="_blank" class="founder-pill">
+                        <span class="x-icon">𝕏</span>
+                        ${f.name}
+                    </a>
+                `;
+            }).join('');
+
+            const investorsHTML = data.investors.map(inv => `
+                <div class="investor-pill" onclick="filterByInvestor('${inv.replace(/'/g, "\\'")}')">${inv}</div>
+            `).join('');
+
+            modalContent.innerHTML = `
+                <div class="modal-header">
+                    <button class="close-btn" onclick="closeModal()">×</button>
+                    ${acquisitionHTML}
+                    <h2 style="font-size: 32px; margin-bottom: 16px;">${data.name}</h2>
+                    <p class="modal-desc">${data.desc}</p>
+                </div>
+                <div class="modal-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label"><span class="info-icon">📅</span> Founded</div>
+                            <div class="info-value">${data.yearEst}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><span class="info-icon">💰</span> Funding</div>
+                            <div class="info-value">${data.totalFunding > 0 ? '$' + data.totalFunding + 'M' : 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><span class="info-icon">📊</span> Stage</div>
+                            <div class="info-value">${data.stage}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label"><span class="info-icon">✨</span> Confidence</div>
+                            <div class="info-value green">${data.confidence}</div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Founding Team</div>
+                    <div class="founders-list">${foundersHTML}</div>
+
+                    <div class="section-title">Investors</div>
+                    <div class="investors-list">${investorsHTML}</div>
+
+                    <button class="visit-btn" onclick="window.open('${data.website}', '_blank')">
+                        Visit Website <span class="visit-icon">→</span>
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        function filterByInvestor(investor) {
+            selectedInvestor = investor;
+            document.getElementById('filterText').textContent = investor;
+            document.getElementById('filterIndicator').classList.add('show');
+            applyFilters();
+            closeModal();
+        }
+
+        function clearInvestorFilter() {
+            selectedInvestor = null;
+            document.getElementById('filterIndicator').classList.remove('show');
+            applyFilters();
+        }
+
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        initVisualization();
+    </script>
+</body>
+</html>
